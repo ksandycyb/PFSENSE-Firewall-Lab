@@ -65,7 +65,7 @@ The lab is designed with a clear separation between the external (untrusted) net
                                                     |
                                       +-------------+------------- +
                                       |   Ubuntu Server (Target)   |
-                                      | (Static IP: 192.168.1.100)  |
+                                      | (Static IP: 192.168.1.100) |
                                       +----------------------------+
 
 ```
