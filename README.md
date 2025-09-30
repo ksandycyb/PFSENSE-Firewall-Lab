@@ -69,7 +69,6 @@ The lab is designed with a clear separation between the external (untrusted) net
                                       +----------------------------+
 
 ```
-*You can create a more visual diagram using a tool like [draw.io](https://app.diagrams.net/) and embed the image here.*
 
 ---
 
@@ -79,7 +78,7 @@ The lab is designed with a clear separation between the external (untrusted) net
 * **Virtualization Software:** [e.g., VMware Workstation, VirtualBox]
 * **Firewall:** pfSense CE (Community Edition)
 * **Attacker Machine:** Kali Linux
-* **Target Machine:** Ubuntu Server
+* **Target Machine:** Ubuntu Server/Desktop
 * **Attack Tools:** Nmap, Metasploit, Hydra (or other tools you used)
 
 ### Virtual Machine Configuration
@@ -89,6 +88,30 @@ The lab is designed with a clear separation between the external (untrusted) net
 | **Kali** | Kali Linux       | Bridged (Connected to physical NIC) | -                          | Attacker          |
 | **pfSense**| pfSense CE       | Bridged (Connected to physical NIC) | Internal Network (`LAN-NET`) | Firewall / Router |
 | **Ubuntu** | Ubuntu Server    | Internal Network (`LAN-NET`)        | -                          | Target / Victim   |
+
+---
+
+### VirtualBox Network Configuration
+Here are the specific network settings for each virtual machine within VirtualBox to create the topology described above.
+
+**1. pfSense VM Network Settings**
+The pfSense VM requires two network adapters: one for the public-facing WAN and one for the private LAN.
+-   **Adapter 1** is set to `Bridged Adapter` to connect to the physical network (WAN).
+-   **Adapter 2** is set to `Internal Network` to create an isolated network for the LAN segment. I have named this internal network `LAN-NET`.
+
+![pfSense Network Settings](https://github.com/your-username/your-repo/blob/main/pfSense%20Network%20Setting.png?raw=true)
+
+**2. Ubuntu VM Network Settings**
+The Ubuntu server sits on the protected LAN. It only needs one adapter connected to the same isolated network as the pfSense LAN interface.
+-   **Adapter 1** is set to `Internal Network` with the exact same name (`LAN-NET`) used in the pfSense VM settings.
+
+![Ubuntu Network Settings](https://github.com/your-username/your-repo/blob/main/Ubuntu%20Network%20Setting.png?raw=true)
+
+**3. Kali Linux VM Network Settings**
+The Kali machine acts as the attacker on the external network. It only needs one adapter to connect to the same physical network as the pfSense WAN interface.
+-   **Adapter 1** is set to `Bridged Adapter`. This allows it to get an IP address from the main router, placing it on the same network as the pfSense WAN.
+
+![Kali Linux Network Settings](https://github.com/your-username/your-repo/blob/main/Kali%20Linux%20Network%20Setting.png?raw=true)
 
 ---
 
