@@ -97,21 +97,26 @@ Here are the specific network settings for each virtual machine within VirtualBo
 **1. pfSense VM Network Settings**
 The pfSense VM requires two network adapters: one for the public-facing WAN and one for the private LAN.
 -   **Adapter 1** is set to `Bridged Adapter` to connect to the physical network (WAN).
--   **Adapter 2** is set to `Internal Network` to create an isolated network for the LAN segment. I have named this internal network `LAN-NET`.
 
-![pfSense Network Settings](https://github.com/your-username/your-repo/blob/main/pfSense%20Network%20Setting.png?raw=true)
+![pfSense Network Settings](./Output/Kali-Adapt-1.png)
+<br>
+
+-   **Adapter 2** is set to `Internal Network` to create an isolated network for the LAN segment. I have named this internal network `intnet`.
+
+
+![pfSense Network Settings](./Output/pfSense-Adapt-2.png)
 
 **2. Ubuntu VM Network Settings**
 The Ubuntu server sits on the protected LAN. It only needs one adapter connected to the same isolated network as the pfSense LAN interface.
--   **Adapter 1** is set to `Internal Network` with the exact same name (`LAN-NET`) used in the pfSense VM settings.
+-   **Adapter 1** is set to `Internal Network` with the exact same name (`intnet`) used in the pfSense VM settings.
 
-![Ubuntu Network Settings](https://github.com/your-username/your-repo/blob/main/Ubuntu%20Network%20Setting.png?raw=true)
+![Ubuntu Network Settings](./Output/Ubuntu-Adapt-1.png)
 
 **3. Kali Linux VM Network Settings**
 The Kali machine acts as the attacker on the external network. It only needs one adapter to connect to the same physical network as the pfSense WAN interface.
 -   **Adapter 1** is set to `Bridged Adapter`. This allows it to get an IP address from the main router, placing it on the same network as the pfSense WAN.
 
-![Kali Linux Network Settings](https://github.com/your-username/your-repo/blob/main/Kali%20Linux%20Network%20Setting.png?raw=true)
+![Kali Linux Network Settings](./Output/pfSense-Adapt-1.png)
 
 ---
 
@@ -121,18 +126,19 @@ The Kali machine acts as the attacker on the external network. It only needs one
 -   Installed pfSense from the ISO image.
 -   During setup, assigned the **Bridged adapter as the WAN interface** (e.g., `em0`).
 -   Assigned the **Internal Network adapter as the LAN interface** (e.g., `em1`).
--   Configured the LAN interface with a static IP address: `10.10.10.1` with a subnet mask of `/24`.
--   Enabled the DHCP server on the LAN interface to serve addresses from `10.10.10.100` to `10.10.10.200`.
+-   Configured the LAN interface with a static IP address: `192.168.1.1` with a subnet mask of `/24`.
+-   Enabled the DHCP server on the LAN interface to serve addresses from `192.168.1.100` to `192.168.1.200`.
+-   In the pfSense Setup just choose `WAN` and `LAN` interfaces, remaining leave it by default
 
 ### 2. Ubuntu Server Setup (LAN)
 -   Installed Ubuntu Server.
 -   Configured the network interface to use a static IP address:
-    -   **IP Address:** `10.10.10.100`
+    -   **IP Address:** `192.168.1.100`
     -   **Subnet Mask:** `255.255.255.0`
-    -   **Gateway:** `10.10.10.1` (The pfSense LAN IP)
-    -   **DNS Server:** `10.10.10.1` (or a public DNS like `8.8.8.8`)
--   Verified connectivity by pinging the gateway (`ping 10.10.10.1`) and an external address (`ping google.com`).
-
+    -   **Gateway:** `192.168.1.1` (The pfSense LAN IP)
+    -   **DNS Server:** `192.168.1.1` (or a public DNS like `8.8.8.8`)
+-   Verified connectivity by pinging the gateway (`ping 192.168.1`) and an external address (`ping google.com`).
+    -  Can able to ping pfSense LAN IP but not `google.com` cause we have not enabled the policy for `WAN` and `LAN` Interactions
 ### 3. Kali Linux Setup (WAN)
 -   Installed Kali Linux.
 -   The Bridged network adapter automatically received an IP address from my home router's DHCP server, placing it on the same network segment as the pfSense WAN interface.
