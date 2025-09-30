@@ -1,6 +1,6 @@
 # pfSense Firewall Lab: Attack Simulation & Defense
 
-![Project Banner](https://i.imgur.com/your-banner-image-url.png) A hands-on lab environment demonstrating the capabilities of pfSense as a perimeter firewall. This project simulates real-world network attack scenarios from a Kali Linux machine and implements defensive firewall policies on pfSense to protect a target Ubuntu server.
+![Project Banner](/Banner.png) A hands-on lab environment demonstrating the capabilities of pfSense as a perimeter firewall. This project simulates real-world network attack scenarios from a Kali Linux machine and implements defensive firewall policies on pfSense to protect a target Ubuntu server.
 
 ---
 
