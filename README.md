@@ -60,7 +60,7 @@ The lab is designed with a clear separation between the external (untrusted) net
                                                     |
                                       +-------------+--------------+
                                       |  pfSense Firewall (LAN)    |
-                                      |   (Gateway: 192.198.1.1)    |
+                                      |   (Gateway: 192.198.1.1)   |
                                       +-------------+--------------+
                                                     |
                                       +-------------+------------- +
