@@ -1,237 +1,143 @@
 # pfSense Firewall Lab: Attack Simulation & Defense
 
-![Project Banner](/Banner.png) A hands-on lab environment demonstrating the capabilities of pfSense as a perimeter firewall. This project simulates real-world network attack scenarios from a Kali Linux machine and implements defensive firewall policies on pfSense to protect a target Ubuntu server.
-
----
+A hands-on lab environment demonstrating the capabilities of pfSense as a perimeter firewall. This project simulates real-world network attack scenarios from a Kali Linux machine and implements defensive firewall policies on pfSense to protect a target Ubuntu server.
 
 ## Table of Contents
-
 - [Project Overview](#project-overview)
 - [Network Topology](#network-topology)
 - [Lab Components](#lab-components)
-  - [Software & Tools](#software--tools)
-  - [Virtual Machine Configuration](#virtual-machine-configuration)
 - [Setup and Configuration](#setup-and-configuration)
-  - [1. pfSense Firewall Setup](#1-pfsense-firewall-setup)
-  - [2. Ubuntu Server Setup (LAN)](#2-ubuntu-server-setup-lan)
-  - [3. Kali Linux Setup (WAN)](#3-kali-linux-setup-wan)
 - [Attack Scenarios & Defense Rules](#attack-scenarios--defense-rules)
-  - [Scenario 1: External Port Scanning](#scenario-1-external-port-scanning)
-  - [Scenario 2: Blocking Unwanted Services (e.g., SSH Brute-Force)](#scenario-2-blocking-unwanted-services-eg-ssh-brute-force)
-  - [Scenario 3: Implementing GeoIP Blocking](#scenario-3-implementing-geoip-blocking)
-  - [Scenario 4: LAN Egress Filtering](#scenario-4-lan-egress-filtering)
 - [Results and Verification](#results-and-verification)
 - [Conclusion & Key Learnings](#conclusion--key-learnings)
 - [Author](#author)
 - [License](#license)
-
----
 
 ## Project Overview
 
 The primary objective of this project is to build a segmented virtual network to practice and demonstrate fundamental network security principles. By placing an Ubuntu server behind a pfSense firewall, we can safely simulate attacks from a Kali Linux machine on the "internet" (WAN side) and observe the effectiveness of firewall rules in real-time.
 
 This lab covers:
--   Installation and configuration of pfSense.
--   Creation of separate WAN and LAN network segments.
--   Simulation of common network attacks using tools like Nmap.
--   Implementation of firewall policies on both WAN and LAN interfaces to mitigate threats.
--   Analysis of firewall logs to verify rule effectiveness.
+* Installation and configuration of pfSense.
+* Creation of separate WAN and LAN network segments[cite: 28].
+* Simulation of common network attacks using tools like Nmap and hping3.
+* Implementation of firewall policies on both WAN and LAN interfaces to mitigate threats.
+* Analysis of firewall logs to verify rule effectiveness.
 
 ## Network Topology
 
 The lab is designed with a clear separation between the external (untrusted) network and the internal (trusted) network, with the pfSense firewall acting as the gateway.
 
-```
-      +-------------------------+
-      |      Your Router        | (e.g., 192.168.1.1/24)
-      +-----------+-------------+
-                  |
-     (Bridged Adapter / WAN Network)
-                  |---------------------------------
-                  |                                |
-+-----------------+---------------+     +--------------------------+
-|      Kali Linux (Attacker)      |     |  pfSense Firewall (WAN)  |
-|      (DHCP from Router)         |     |  (DHCP from Router)      |
-+---------------------------------+     +-----------+--------------+
-                                                    |
-                                       (Internal Network / LAN)
-                                      (e.g., 191.168.1.0/24)
-                                                    |
-                                      +-------------+--------------+
-                                      |  pfSense Firewall (LAN)    |
-                                      |   (Gateway: 192.198.1.1)   |
-                                      +-------------+--------------+
-                                                    |
-                                      +-------------+------------- +
-                                      |   Ubuntu Server (Target)   |
-                                      | (Static IP: 192.168.1.100) |
-                                      +----------------------------+
-
-```
-
----
-
 ## Lab Components
 
 ### Software & Tools
-* **Virtualization Software:** [e.g., VMware Workstation, VirtualBox]
+* **Virtualization Software:** VMware Workstation / VirtualBox
 * **Firewall:** pfSense CE (Community Edition)
 * **Attacker Machine:** Kali Linux
 * **Target Machine:** Ubuntu Server/Desktop
-* **Attack Tools:** Nmap, Metasploit, Hydra (or other tools you used)
+* **Attack Tools:** Nmap, Metasploit, Hydra, hping3
 
 ### Virtual Machine Configuration
-
-| VM Name   | Operating System | Network Adapter 1                 | Network Adapter 2          | Purpose           |
-|-----------|------------------|-----------------------------------|----------------------------|-------------------|
-| **Kali** | Kali Linux       | Bridged (Connected to physical NIC) | -                          | Attacker          |
-| **pfSense**| pfSense CE       | Bridged (Connected to physical NIC) | Internal Network (`LAN-NET`) | Firewall / Router |
-| **Ubuntu** | Ubuntu Server    | Internal Network (`LAN-NET`)        | -                          | Target / Victim   |
-
----
-
-### VirtualBox Network Configuration
-Here are the specific network settings for each virtual machine within VirtualBox to create the topology described above.
-
-**1. pfSense VM Network Settings**
-The pfSense VM requires two network adapters: one for the public-facing WAN and one for the private LAN.
--   **Adapter 1** is set to `Bridged Adapter` to connect to the physical network (WAN).
-
-![pfSense Network Settings](./Output/Kali-Adapt-1.png)
-<br>
-
--   **Adapter 2** is set to `Internal Network` to create an isolated network for the LAN segment. I have named this internal network `intnet`.
-
-
-![pfSense Network Settings](./Output/pfSense-Adapt-2.png)
-
-**2. Ubuntu VM Network Settings**
-The Ubuntu server sits on the protected LAN. It only needs one adapter connected to the same isolated network as the pfSense LAN interface.
--   **Adapter 1** is set to `Internal Network` with the exact same name (`intnet`) used in the pfSense VM settings.
-
-![Ubuntu Network Settings](./Output/Ubuntu-Adapt-1.png)
-
-**3. Kali Linux VM Network Settings**
-The Kali machine acts as the attacker on the external network. It only needs one adapter to connect to the same physical network as the pfSense WAN interface.
--   **Adapter 1** is set to `Bridged Adapter`. This allows it to get an IP address from the main router, placing it on the same network as the pfSense WAN.
-
-![Kali Linux Network Settings](./Output/pfSense-Adapt-1.png)
-
----
+> **Note:** You can add a table here detailing the vCPU, RAM, and Network Adapter settings for each VM.
 
 ## Setup and Configuration
 
 ### 1. pfSense Firewall Setup
--   Installed pfSense from the ISO image.
--   During setup, assigned the **Bridged adapter as the WAN interface** (e.g., `em0`).
--   Assigned the **Internal Network adapter as the LAN interface** (e.g., `em1`).
--   Configured the LAN interface with a static IP address: `192.168.1.1` with a subnet mask of `/24`.
--   Enabled the DHCP server on the LAN interface to serve addresses from `192.168.1.100` to `192.168.1.200`.
--   In the pfSense Setup just choose `WAN` and `LAN` interfaces, remaining leave it by default
+* Configured the LAN interface with a static IP address: `192.168.1.1` with a subnet mask of `/24`.
+* Enabled the DHCP server on the LAN interface.
 
 ### 2. Ubuntu Server Setup (LAN)
--   Installed Ubuntu Server.
--   Configured the network interface to use a static IP address:
-    -   **IP Address:** `192.168.1.100`
-    -   **Subnet Mask:** `255.255.255.0`
-    -   **Gateway:** `192.168.1.1` (The pfSense LAN IP)
-    -   **DNS Server:** `192.168.1.1` (or a public DNS like `8.8.8.8`)
--   Verified connectivity by pinging the gateway (`ping 192.168.1`) and an external address (`ping google.com`).
-    -  Can able to ping pfSense LAN IP but not `google.com` cause we have not enabled the policy for `WAN` and `LAN` Interactions
-### 3. Kali Linux Setup (WAN)
--   Installed Kali Linux.
--   The Bridged network adapter automatically received an IP address from my home router's DHCP server, placing it on the same network segment as the pfSense WAN interface.
+* Configured the network interface to use a static IP address: `192.168.1.101`.
+* Set the Gateway to `192.168.1.1` (The pfSense LAN IP).
 
----
+### 3. Kali Linux Setup (WAN)
+* The Bridged network adapter automatically received an IP address (e.g., `192.168.116.x`) from the home router's DHCP server.
+
+### Initial Configuration & Security
+
+The pfSense WAN interface employs a **"default-deny"** policy, blocking all inbound traffic. The following steps were required to establish and secure administrative access.
+
+#### Gaining and Securing WebGUI Access
+
+1.  **Gaining Temporary Access:** Access to the WebGUI was initially blocked. The packet filter was temporarily disabled via the console (Option 8 - Shell):
+
+    ```sh
+    pfctl -d
+    ```
+2.  **Securing Access:** Logged into the WebGUI (e.g., `https://192.168.116.9`) using default credentials (`admin` / `pfsense`)[cite: 56]. The default password was immediately changed.
+3.  **Creating Permanent Administrative Rules:** To restore security and maintain access, two rules were added to the `Firewall > Rules > WAN` tab:
+    * **Pass TCP:** Allows WebGUI access from the local WAN subnet (`192.168.116.0/24`) to the pfSense WAN IP[cite: 59].
+    * **Pass ICMP:** Allows `ping` traffic for diagnostics[cite: 60].
+4.  **Re-enabling Firewall:** After saving and applying the rules, the packet filter was re-enabled from the console:
+    ```sh
+    pfctl -e
+    ```
+
+### Establishing Cross-Network Routing
+
+Since the WAN devices did not know the path to the `192.168.1.0/24` LAN, static routes were manually added to direct traffic for the LAN subnet through the pfSense WAN IP (`192.168.116.9`)[cite: 65]. This was done on the Kali Linux attacker machine and the Windows Host PC.
+
+### Initial Connectivity Verification
+
+Connectivity was verified across all segments, confirming the static routes and permissive firewall rules were functional. A `ping` from the WAN-side Kali machine to the LAN-side Ubuntu host (`192.168.1.101`) was successful.
 
 ## Attack Scenarios & Defense Rules
 
 This section details the simulated attacks and the corresponding firewall rules implemented to block them.
 
 ### Scenario 1: External Port Scanning
-**Objective:** Prevent an attacker from discovering open ports on our WAN interface.
-
-* **Attack Simulation:**
-    From the Kali Linux machine, I ran an Nmap scan against the pfSense WAN IP address.
-    ```bash
-    sudo nmap -sV -p- [pfsense_wan_ip]
-    ```
-
-* **Default Behavior:**
-    By default, pfSense blocks all unsolicited inbound traffic on the WAN interface. The Nmap scan should show all ports as `filtered` or `closed`.
-
-* **Defense Rule (Default):**
-    No rule is needed as this is the default state-full firewall behavior.
+* **Objective:** Prevent an attacker from discovering open ports on our WAN interface.
+* **Attack Simulation:** An Nmap scan was run against the pfSense WAN IP address.
+* **Defense Rule (Default):** No new rule is needed. By default, pfSense is a stateful firewall and blocks all unsolicited inbound traffic on the WAN interface.
 
 ### Scenario 2: Blocking a Specific Malicious IP
-**Objective:** Block all traffic from a known malicious IP address trying to access a web server hosted behind the firewall.
+* **Objective:** Block all traffic from a known malicious IP address trying to access a web server hosted behind the firewall.
+* **Setup:** A Port Forwarding (NAT) rule was created to forward traffic from WAN port `80` to the Ubuntu server's IP `192.168.1.100` on port `80`.
+* **Attack Simulation:** A `curl http://[pfsense_wan_ip]` command from the Kali machine was initially successful.
+* **Defense Rule:** A `Block` rule was created on the `WAN` interface targeting the Kali IP as the `Source`.
+* **Verification:** The `curl` command timed out, and firewall logs showed the traffic being dropped.
 
-* **Setup:**
-    1.  Create a Port Forwarding rule (NAT) to forward traffic from WAN port `80` to the Ubuntu server's IP `10.10.10.100` on port `80`.
-    2.  This NAT rule automatically creates an associated firewall rule on the WAN interface allowing this traffic.
+![Block Rule Screenshot](path/to/your/block-rule-screenshot.png)
 
-* **Attack Simulation:**
-    From Kali, I attempted to access the web server.
-    ```bash
-    curl http://[pfsense_wan_ip]
-    ```
-    This connection was successful.
-
-* **Defense Rule:**
-    On the **WAN interface rules**, I created a **Block** rule at the top of the list:
-    -   **Action:** `Block`
-    -   **Interface:** `WAN`
-    -   **Protocol:** `Any`
-    -   **Source:** `Single host or alias` -> `[Kali_Linux_IP]`
-    -   **Destination:** `Any`
-    -   **Description:** `Block known malicious actor`
-
-* **Verification:**
-    I re-ran the `curl` command from Kali, which now timed out. The pfSense firewall logs showed the traffic being dropped by my new rule.
-
-![Block Rule Screenshot](https://i.imgur.com/your-screenshot-url.png)
-
----
 ### Scenario 3: LAN Egress Filtering
-**Objective:** Prevent internal machines (if compromised) from communicating with known malicious external command-and-control (C2) servers.
+* **Objective:** Prevent internal machines (if compromised) from communicating with known malicious external command-and-control (C2) servers.
+* **Attack Simulation:** From the Ubuntu machine, a `ping` to a fictitious C2 server IP (`45.33.32.156`) was successful by default.
+* **Defense Rule:** A `Block` rule was created on the `LAN` interface targeting the malicious IP as the `Destination`.
+* **Verification:** The `ping` command from Ubuntu failed.
 
-* **Attack Simulation:**
-    From the Ubuntu machine, I tried to ping a fictitious C2 server IP address `[e.g., 45.33.32.156]`.
-    ```bash
-    ping 45.33.32.156
-    ```
-    The ping was successful by default.
+### Scenario 4: Implementing GeoIP Blocking
+> **Note:** This section is a placeholder for the future implementation of installing and configuring GeoIP blocking. 
 
-* **Defense Rule:**
-    On the **LAN interface rules**, I created a **Block** rule:
-    -   **Action:** `Block`
-    -   **Interface:** `LAN`
-    -   **Protocol:** `Any`
-    -   **Source:** `Any`
-    -   **Destination:** `Single host or alias` -> `45.33.32.156`
-    -   **Description:** `Block outbound C2 traffic`
-
-* **Verification:**
-    I re-ran the `ping` command from Ubuntu, which now failed.
-
----
+### Scenario 5: Blocking a Targeted DoS Attack (SYN Flood)
+* **Objective:** Mitigate an application-layer Denial of Service (DoS) attack originating from a specific attacker IP.
+* **Attack Simulation:** The Kali attacker used `hping3` to flood the target Ubuntu host with SYN packets.
+* **Defense Rule:** A specific `Reject` rule was created on the `WAN` interface to actively deny all traffic from the malicious source IP.
+    * **Action:** `Reject`
+    * **Interface:** `WAN`
+    * **Protocol:** `IPv4 *`
+    * **Source:** `192.168.116.102` (Kali Attacker's IP)
+    * **Destination:** `LAN subnets`
+* **Verification:** Re-running a Wireshark capture on the Ubuntu host showed a clean network trace, confirming the `Reject` rule successfully stopped the SYN flood.
 
 ## Results and Verification
-The lab successfully demonstrated the core functionality of a stateful firewall. By implementing specific rules on both the WAN and LAN interfaces, I was able to:
--   Effectively block external scans and targeted attacks from a specific IP.
--   Control outbound traffic from the internal network.
--   Utilize firewall logs to confirm that malicious traffic was being dropped as intended.
 
-![Firewall Log Screenshot](https://i.imgur.com/your-logs-screenshot.png)
+The lab successfully demonstrated the core functionality of a stateful firewall. By implementing specific rules on both the WAN and LAN interfaces, I was able to:
+* Effectively block external scans and targeted attacks from a specific IP.
+* Control outbound (egress) traffic from the internal network.
+* Successfully mitigate a targeted SYN Flood attack using a `Reject` rule.
+* Utilize firewall logs to confirm that malicious traffic was being dropped/rejected as intended.
+
+![Firewall Log Screenshot](path/to/your/firewall-log-screenshot.png)
 
 ## Conclusion & Key Learnings
-This project was a valuable exercise in practical network security. It reinforced the importance of a defense-in-depth strategy, where the firewall serves as the first line of defense. Key takeaways include understanding the default-deny policy of pfSense on the WAN, the importance of rule order, and the ability to control traffic flow in both directions (ingress and egress).
+
+This project was a valuable exercise in practical network security, reinforcing the importance of a defense-in-depth strategy where the firewall serves as the first line of defense.
+
+Key takeaways include:
+* Understanding the default-deny policy of pfSense on the WAN.
+* The importance of rule order in firewall policies.
+* The necessity of static routing in multi-segment lab environments.
+* The ability to control traffic flow in both directions (ingress and egress).
 
 Future improvements could include setting up a DMZ, configuring an Intrusion Prevention System (IPS) like Snort or Suricata, and implementing a VPN.
 
-## Author
-* **[Your Name]** - [Your LinkedIn/GitHub/Portfolio URL]
-
-## License
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
